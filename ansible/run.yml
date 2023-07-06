@@ -1,0 +1,6 @@
+---
+- name: Run commands
+  hosts: eth-nodes-hosts
+  become: true
+  roles:
+    - eth-node

@@ -1,0 +1,8 @@
+---
+### Versions
+ethereum_geth_version: "v1.12.0"
+ethereum_lighthouse_version: "v4.3.0"
+
+### Args
+ethereum_geth_args: "--mainnet --datadir /opt/ethereum --authrpc.jwtsecret /opt/ethereum/geth/jwtsecret --authrpc.addr 0.0.0.0 --authrpc.port 8551 --authrpc.vhosts=geth"
+ethereum_lighthouse_args: "lighthouse bn --network mainnet --datadir /opt/ethereum/lighthouse --http --execution-endpoint http://geth:8551 --execution-jwt /opt/ethereum/geth/jwtsecret"

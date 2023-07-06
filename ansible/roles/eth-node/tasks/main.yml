@@ -1,0 +1,79 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Upgrade packages
+  apt:
+    upgrade: dist
+
+- name: Install required system packages
+  apt:
+    pkg:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - python3-pip
+      - virtualenv
+      - python3-setuptools
+    state: latest
+    update_cache: true
+
+- name: Install Docker
+  shell: curl -fsSL https://get.docker.com | sh
+  args:
+    creates: /usr/bin/docker
+
+- name: Install Docker module
+  command: pip install docker
+
+- name: Start Docker
+  systemd:
+    name: docker
+    state: started
+
+- name: Add user to the docker group
+  user:
+    name: "{{ ansible_user }}"
+    groups: docker
+    append: yes
+
+- name: Create Docker network
+  docker_network:
+    name: eth-node-network
+
+- name: Run execution layer Ethereum container | Geth
+  docker_container:
+    name: geth
+    image: "ethereum/client-go:{{ ethereum_geth_version }}"
+    networks: 
+      - name: eth-node-network
+    volumes:
+      - "/opt/ethereum/geth:/opt/ethereum/geth"
+    ports:
+      - "30303:30303/tcp"
+      - "30303:30303/udp"
+#      - "8551:8551" # connects privately using docker bridge network
+      - "8545:8545"
+      - "8546:8546"
+    command: "{{ ethereum_geth_args }}"
+
+- name: Pause
+  pause:
+    seconds: 60
+
+- name: Run consensus layer Ethereum container | Lighthouse
+  docker_container:
+    name: lighthouse
+    image: "sigp/lighthouse:{{ ethereum_lighthouse_version }}"
+    networks: 
+      - name: eth-node-network
+    volumes:
+      - "/opt/ethereum/lighthouse:/opt/ethereum/lighthouse"
+      - "/opt/ethereum/geth/jwtsecret:/opt/ethereum/geth/jwtsecret"
+    ports:
+      - "5052:5052/tcp"
+      - "9000:9000/tcp"
+      - "9000:9000/udp"
+    command: "{{ ethereum_lighthouse_args }}"
